@@ -19,7 +19,7 @@ jobs:
         dotnet-version: 9.0.x
         
     - name: Restore dependencies
-      run: dotnet restore **/*.sln
+      run: dotnet restore MVCProject1/MVCProject1/MVCProject1.sln
       
     - name: Build
-      run: dotnet build **/*.sln --no-restore --configuration Release
+      run: dotnet build MVCProject1/MVCProject1/MVCProject1.sln --no-restore --configuration Release
