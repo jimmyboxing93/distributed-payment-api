@@ -1,0 +1,2 @@
+- Senior Project that works with a RESTful API
+- API allows users to view all credit cards, get specified credit card information, update a credit card, and delete a credit card
