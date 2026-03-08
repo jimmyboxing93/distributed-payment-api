@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "MVCProject1": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:53672;http://localhost:53673"
+    }
+  }
+}
