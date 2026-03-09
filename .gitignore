@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+docker-compose.override.yml
+usersecrets.json
 
 # User-specific files
 *.rsuser
@@ -480,3 +482,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# .NET 9 specific
+obj/

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MVCProject1.Models;
 using MVCProject1.UserData;
-using System;
 
 namespace MVCProject1.Controllers
 {
@@ -9,11 +8,13 @@ namespace MVCProject1.Controllers
     [ApiController]
     public class ApiController : ControllerBase
     {
-        private IUserInfo _userInfo;
+        private readonly IUserInfo _userInfo;
+        private readonly ILogger<ApiController> _logger;
 
-        public ApiController(IUserInfo model)
+        public ApiController(IUserInfo userInfo, ILogger<ApiController> logger)
         {
-            _userInfo = model;
+            _userInfo = userInfo;
+            _logger = logger;
         }
         // Reads data using GET method
         [HttpGet]
@@ -43,9 +44,26 @@ namespace MVCProject1.Controllers
         [Route("api/[controller]")]
         public IActionResult Payment(UserInfo model)
         {
-            _userInfo.AddCreditCard(model);
-            return Created(HttpContext.Request.Scheme + "://" + HttpContext.Request.Host + HttpContext.Request.Path + "/" + model.UserID,
-                model);
+            _logger.LogInformation("Processing payment request for User: {userId}", model.UserID);
+            // Guard clause
+            if (string.IsNullOrEmpty(model.creditCardNumber)) 
+            {
+                _logger.LogWarning("Payment failed: User {UserId} submitted an empty credit card number.", model.UserID);
+                return BadRequest("Credit card number is required");
+            }
+            try
+            {
+                _userInfo.AddCreditCard(model);
+                _logger.LogInformation("Succesfully processed payment for user: {userID}", model.UserID);
+                return Ok(new { Message = "Payment proccced succesfully" });
+
+            }
+
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex, "An unexpected error occurred while adding card for User: {UserId}", model.UserID);
+                return StatusCode(500, "Internal server error.");
+            }
 
            
         }

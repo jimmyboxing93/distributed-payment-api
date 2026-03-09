@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using MVCProject1.Models;
-using System;
+using Serilog;
+
 
 namespace MVCProject1
 {
@@ -10,39 +9,60 @@ namespace MVCProject1
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("!!! DOCKER IS STARTING THE APP !!!");
-            
-            var host = CreateWebHostBuilder(args).Build();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console()
+                .WriteTo.File("logs/payement-api-.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
 
-            // This block runs BEFORE the app starts listening for web requests
-            using (var scope = host.Services.CreateScope())
+            try
             {
-                var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<UserContext>();
-                    // This forces a connection to SQL Server immediately
-                    context.Database.EnsureCreated();
-                    
-                    Console.WriteLine("---------------------------------");
-                    Console.WriteLine("SUCCESS: Database connection established!");
-                    Console.WriteLine("---------------------------------");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("---------------------------------");
-                    Console.WriteLine($"DATABASE ERROR: {ex.Message}");
-                    if (ex.InnerException != null) 
-                        Console.WriteLine($"DETAILS: {ex.InnerException.Message}");
-                    Console.WriteLine("---------------------------------");
-                }
-            }
+                Log.Information("Docker is starting the app");
 
-            host.Run();
+                var host = CreateWebHostBuilder(args).Build();
+
+
+                // This block runs BEFORE the app starts listening for web requests
+                using (var scope = host.Services.CreateScope())
+                {
+                    var services = scope.ServiceProvider;
+                    try
+                    {
+                        var context = services.GetRequiredService<UserContext>();
+                        // This forces a connection to SQL Server immediately
+                        context.Database.EnsureCreated();
+                        Log.Information("Database connection verified successfully.");
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        Log.Fatal(ex, "Database error: Could not ensure database creation.");
+
+                    }
+                }
+                host.Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "The application failed to start correctly.");
+            }
+            finally 
+            {
+				// Ensures all logs are written before the app closes
+
+				Log.CloseAndFlush();
+            }
+            
+           
+
+            
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+			//This tells the web host to use Serilog
+				.ConfigureServices(services => services.AddSerilog())
+				.UseStartup<Startup>();
     }
 }
