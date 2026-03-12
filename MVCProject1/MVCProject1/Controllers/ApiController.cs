@@ -55,7 +55,7 @@ namespace MVCProject1.Controllers
             {
                 _userInfo.AddCreditCard(model);
                 _logger.LogInformation("Succesfully processed payment for user: {userID}", model.UserID);
-                return Ok(new { Message = "Payment proccced succesfully" });
+                return Ok(new { Message = "Payment processed successfully" });
 
             }
 
