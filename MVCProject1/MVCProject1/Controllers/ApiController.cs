@@ -72,35 +72,38 @@ namespace MVCProject1.Controllers
         [Route("api/[controller]/{id}")]
         public IActionResult EditCreditCard(Guid id, UserInfo model)
         {
+            _logger.LogInformation("Edit request received for Card Id: {CardId}", id);
             var existing_user = _userInfo.GetCreditCard(id);
 
             if (existing_user != null)
             {
                 model.UserID = existing_user.UserID;
                 _userInfo.EditCreditCard(model);
-               
-            }
-            return Ok(model);
+                _logger.LogWarning("Card ID: {CardId} was UPDATED.", id);
+				return Ok();
+			}
+            _logger.LogWarning("Update failed: CardId: {CardID} was not found.", id);
+            return NotFound($"user with Id: {id} was not found");
+
+            
         }
         // Deletes data using delete method
-        
         [HttpDelete]
         [Route("api/[controller]/{id}")]
         public IActionResult DeleteCreditCard(Guid id)
         {
+            _logger.LogInformation("Delete request received for Card Id: {CardId}", id);
             var user = _userInfo.GetCreditCard(id);
 
             if (user != null)
             {
                 _userInfo.DeleteCreditCard(user);
+                _logger.LogWarning("Card ID: {CardId} was DELETED.", id);
                 return Ok();
             }
+            _logger.LogWarning("Delete failed: CardId: {CardID} was not found.", id);
             return NotFound($"User with Id: {id} was not found");
 
         }
-
-        
-
-
     }
 }
