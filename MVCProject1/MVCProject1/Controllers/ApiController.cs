@@ -75,17 +75,22 @@ namespace MVCProject1.Controllers
             _logger.LogInformation("Edit request received for Card Id: {CardId}", id);
             var existing_user = _userInfo.GetCreditCard(id);
 
-            if (existing_user != null)
+            if (existing_user == null) 
             {
-                model.UserID = existing_user.UserID;
-                _userInfo.EditCreditCard(model);
-                _logger.LogWarning("Card ID: {CardId} was UPDATED.", id);
-				return Ok();
+				return NotFound($"user with Id: {id} was not found");
 			}
-            _logger.LogWarning("Update failed: CardId: {CardID} was not found.", id);
-            return NotFound($"user with Id: {id} was not found");
 
-            
+            // Security check
+            if (id != existing_user.UserID) 
+            {
+                _logger.LogWarning("Security Alert: Unauthorized edit attmept on ID: {Id}", id);
+                return Unauthorized("You do not have permission to edit this record");
+            }
+
+            model.UserID = existing_user.UserID;
+            _logger.LogWarning("Card ID: {CardId} was UPDATED.", id);
+			_userInfo.EditCreditCard(model);
+			return Ok();
         }
         // Deletes data using delete method
         [HttpDelete]

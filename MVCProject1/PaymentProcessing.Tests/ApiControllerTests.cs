@@ -53,5 +53,69 @@ namespace PaymentProcessing.Tests
 			mockService.Verify(s => s.AddCreditCard(It.IsAny<UserInfo>()), Times.Once);
 
 		}
+
+		// Security test
+		[Fact]
+		public void Edit_ReturnsUnathorized_WhenUserIsNotOwner() 
+		{
+			// Setup arrange, assert, verify logic
+			var mockService = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockService.Object, mockLogger.Object);
+
+			var existingCard = new UserInfo
+			{
+				UserID = Guid.NewGuid(),
+				creditCardNumber = "1111"
+			};
+
+			var hackerAttempt = new UserInfo
+			{
+				UserID = Guid.NewGuid(),
+				creditCardNumber = "2222"
+			};
+
+			mockService.Setup(s => s.GetCreditCard(It.IsAny<Guid>())).Returns(existingCard);
+
+			var result = controller.EditCreditCard(hackerAttempt.UserID, hackerAttempt);
+
+			Assert.IsType<UnauthorizedObjectResult>(result);
+
+			mockService.Verify(s => s.EditCreditCard(It.IsAny<UserInfo>()), Times.Never);
+		}
+
+		// Edit happy path
+		[Fact]
+		public void Edit_ReturnsOk_WhenUserIsOwner() 
+		{
+			var mockService = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockService.Object, mockLogger.Object);
+
+
+			var userId = Guid.NewGuid();
+
+			var existingCard = new UserInfo
+			{
+				UserID = userId,
+				creditCardNumber = "1111"
+			};
+
+			var updatedInput = new UserInfo
+			{
+				UserID = userId,
+				creditCardNumber = "2222"
+			};
+
+			mockService.Setup(s => s.GetCreditCard(userId)).Returns(existingCard);
+
+			var result = controller.EditCreditCard(updatedInput.UserID, updatedInput);
+
+			Assert.IsType<OkResult>(result);
+
+			mockService.Verify(s => s.EditCreditCard(It.IsAny<UserInfo>()), Times.Once);
+
+
+		}
 	}
 }
