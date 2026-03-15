@@ -10,6 +10,67 @@ namespace PaymentProcessing.Tests
 {
 	public class ApiControllerTests
 	{
+		// Happy path get method
+		[Fact]
+		public void GetCreditCard_Ok_WhenUserIsOwner() 
+		{
+			// Arrange, act, assert
+			var mockService = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockService.Object, mockLogger.Object);
+
+			var userId = Guid.NewGuid();
+
+			var existingUser = new UserInfo
+			{
+				UserID = userId,
+				creditCardNumber = "1234"
+			};
+
+			mockService.Setup(s => s.GetCreditCard(userId)).Returns(existingUser);
+
+			var result = controller.GetCreditCard(userId);
+			var okResult = Assert.IsType<OkObjectResult>(result);
+
+			Assert.Equal(existingUser, okResult.Value);
+
+
+		}
+
+		// Get user not found path
+		[Fact]
+		public void GetCrediCard_ReturnBadRequest_WhenUserIsNotFound() 
+		{
+			// Setting up arrange, act, assert, and verify
+			// to do
+		}
+
+		// Get method sad path 
+		[Fact]
+		public void GetCreditCard_ReturnsUnathorized_WhenUserIsNotOwner() 
+		{
+			// Setting up Arrange, act, assert and verify. 
+			var mockServie = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockServie.Object, mockLogger.Object);
+
+			var ownerId = Guid.NewGuid();
+			var hackerId = Guid.NewGuid();
+
+			var existingCard = new UserInfo
+			{
+
+				UserID = ownerId,
+				creditCardNumber = "111"
+			};
+
+			mockServie.Setup(s => s.GetCreditCard(hackerId)).Returns(existingCard);
+
+			var result = controller.GetCreditCard(hackerId);
+
+			Assert.IsType<UnauthorizedObjectResult>(result);
+		}
+
 		// Testing null credit cards via post method. 
 		[Fact]
 		public void Payment_ReturnBadRequest_WhenCreditCardIsEmpty()
@@ -117,5 +178,65 @@ namespace PaymentProcessing.Tests
 
 
 		}
+
+		// Delete Happy path
+		[Fact]
+		public void Delete_ReturnsOk_WhenUserIsOwner() 
+		{
+			// Setup arrange, act, assert, verify logic
+			var mockService = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockService.Object, mockLogger.Object);
+
+			var userId = Guid.NewGuid();
+
+			var existingCard = new UserInfo
+			{
+				UserID = userId,
+				creditCardNumber = "1111"
+			};
+
+			mockService.Setup(s => s.GetCreditCard(userId)).Returns(existingCard);
+
+			var result = controller.DeleteCreditCard(userId);
+
+			Assert.IsType<NoContentResult>(result);
+
+			mockService.Verify(s => s.DeleteCreditCard(It.IsAny<UserInfo>()), Times.Once);
+
+
+		}
+
+		// Delete sad path
+		[Fact]
+		public void Delete_ReturnsUnathorized_WhenUserIsNotOwner() 
+		{
+			//Setup arrgange, act, assert, verify
+			var mockService = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockService.Object, mockLogger.Object);
+
+
+			var existingCard = new UserInfo
+			{
+				UserID = Guid.NewGuid(),
+				creditCardNumber = "1111"
+			};
+
+			var hackerAttempt = new UserInfo
+			{
+				UserID = Guid.NewGuid(),
+				creditCardNumber = "2222"
+			};
+
+			mockService.Setup(s => s.GetCreditCard(hackerAttempt.UserID)).Returns(existingCard);
+
+			var result = controller.DeleteCreditCard(hackerAttempt.UserID);
+
+			Assert.IsType<UnauthorizedObjectResult>(result);
+
+			mockService.Verify(s => s.DeleteCreditCard(It.IsAny<UserInfo>()), Times.Never);
+		}
+
 	}
 }

@@ -29,14 +29,22 @@ namespace MVCProject1.Controllers
         [Route("api/[controller]/{id}")]
         public ActionResult GetCreditCard(Guid id)
         {
-            var user = _userInfo.GetCreditCard(id);
+			_logger.LogInformation("Get request received for Card Id: {CardId}", id);
+			var user = _userInfo.GetCreditCard(id);
 
-            if (user != null)
+            if (user == null) 
             {
-                return Ok(user);
+                _logger.LogWarning("User Lookup failed: User {UserId} was unable to find a credit card associated with account", id);
+				return NotFound($"User with Id: {id} was not found");
             }
 
-            return NotFound($"User with Id: {id} was not found");
+            // Security check. Checks to see if the ID's match
+            if (id != user.UserID) 
+            {
+                return Unauthorized("You do not have permission to view this card");
+            }
+
+            return Ok(user);
         }
 
         // Writes data using post method
@@ -99,16 +107,21 @@ namespace MVCProject1.Controllers
         {
             _logger.LogInformation("Delete request received for Card Id: {CardId}", id);
             var user = _userInfo.GetCreditCard(id);
-
-            if (user != null)
+            if (user == null) 
             {
+				_logger.LogWarning("Delete failed: CardId: {CardID} was not found.", id);
+				return NotFound($"User with Id: {id} was not found");
+			}
+
+            // Checking to see if Id matches user
+            if (id != user.UserID) 
+            {
+				_logger.LogWarning("Security Alert: Unauthorized delete attmept on ID: {Id}", id);
+				return Unauthorized("You do not have permission to delete this card.");
+            }
                 _userInfo.DeleteCreditCard(user);
                 _logger.LogWarning("Card ID: {CardId} was DELETED.", id);
-                return Ok();
-            }
-            _logger.LogWarning("Delete failed: CardId: {CardID} was not found.", id);
-            return NotFound($"User with Id: {id} was not found");
-
+                return NoContent();
         }
     }
 }
