@@ -39,10 +39,19 @@ namespace PaymentProcessing.Tests
 
 		// Get user not found path
 		[Fact]
-		public void GetCrediCard_ReturnBadRequest_WhenUserIsNotFound() 
+		public void GetCrediCard_ReturnNotFound_WhenUserIdDoesNotExist() 
 		{
 			// Setting up arrange, act, assert, and verify
-			// to do
+			var mockService = new Mock<IUserInfo>();
+			var mockLogger = new Mock<ILogger<ApiController>>();
+			var controller = new ApiController(mockService.Object, mockLogger.Object);
+
+			// Retrun Null for any ID
+			mockService.Setup(S => S.GetCreditCard(It.IsAny<Guid>())).Returns((UserInfo)null);
+
+			var result = controller.GetCreditCard(Guid.NewGuid());
+
+			Assert.IsType<NotFoundObjectResult>(result);
 		}
 
 		// Get method sad path 
