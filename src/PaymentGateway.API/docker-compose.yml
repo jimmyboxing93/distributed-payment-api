@@ -1,0 +1,42 @@
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_PASSWORD} 
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  api-service:
+    build: 
+      context: .
+      dockerfile: PaymentGateway.API/PaymentGateway.API/Dockerfile
+    container_name: payment_api
+    ports:
+      - "8080:80"
+    environment:
+      # Note the double underscore for nested JSON keys
+      - ConnectionStrings__DefaultConnection=Server=database;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_PASSWORD};TrustServerCertificate=True;
+      - ASPNETCORE_URLS=http://+:80
+    depends_on:
+      - database
+
+  ui-service:
+    build: 
+      context: ./PaymentGateway.API
+      dockerfile: ViewApi/Dockerfile
+    container_name: payment_ui
+    environment: 
+        - ASPNETCORE_URLS=http://+:80
+        - ConnectionStrings__DefaultConnection=Server=database;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_PASSWORD};TrustServerCertificate=True;
+    ports:
+      - "5000:80"
+    depends_on:
+      - api-service
+
+volumes:
+  mssql_data:
