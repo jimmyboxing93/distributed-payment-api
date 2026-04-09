@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using PaymentGateway.API.Utilities;
-namespace PaymentGateway.API.Models
+
+namespace SharedData.Models
 {
     public class UserInfo
     {

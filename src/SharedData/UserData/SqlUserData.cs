@@ -1,11 +1,13 @@
-﻿using PaymentGateway.API.Models;
+﻿using SharedData.Models;
+using SharedData.Data;
+using SharedData.Interfaces;
 
-namespace PaymentGateway.API.UserData
+namespace SharedData.UserData
 {
     public class SqlUserData : IUserInfo
     {
-        private UserContext _userContext;
-        public SqlUserData(UserContext userContext)
+		private readonly SeniorDbContext _userContext;
+		public SqlUserData(SeniorDbContext userContext)
         {
             _userContext = userContext;
         }
