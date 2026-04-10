@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using PaymentGateway.API.Models;
+﻿using SharedData.Models;
 
-namespace PaymentGateway.API.UserData
+namespace SharedData.Interfaces
 {
     public interface IUserInfo
     {

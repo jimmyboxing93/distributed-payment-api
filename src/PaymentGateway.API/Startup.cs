@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PaymentGateway.API.Models;
-using PaymentGateway.API.UserData;
+using SharedData.UserData;
 using PaymentGateway.API.Middleware;
+using SharedData.Interfaces;
 
 namespace PaymentGateway.API
 {

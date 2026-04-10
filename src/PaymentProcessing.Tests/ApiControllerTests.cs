@@ -3,8 +3,8 @@ using Xunit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PaymentGateway.API.Controllers;
-using PaymentGateway.API.UserData;
-using PaymentGateway.API.Models;
+using SharedData.Interfaces;
+using SharedData.Models;
 
 namespace PaymentProcessing.Tests
 {

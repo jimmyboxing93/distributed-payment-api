@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PaymentGateway.API.Models;
-using PaymentGateway.API.UserData;
+using SharedData.Models;
+using SharedData.Interfaces;
 
 namespace PaymentGateway.API.Controllers
 {
@@ -50,7 +50,7 @@ namespace PaymentGateway.API.Controllers
 		// Writes data using post method
 		[HttpPost]
 		[Route("api/[controller]")]
-		public IActionResult Payment(UserInfo model)
+		public IActionResult Payment(SharedData.Models.UserInfo model)
 		{
 			_logger.LogInformation("Processing payment request for User: {userId}", model.UserID);
 			// Guard clause

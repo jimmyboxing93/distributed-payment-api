@@ -1,9 +1,11 @@
-﻿using Microsoft.SemanticKernel;
+﻿using System.Text;
+using AIFinancialService.Plugins;
+using AIFinancialService.Services;
+using Google.GenAI;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using SharedData.Models;
-using AIFinancialService.Services;
-using System.Text;
 
 namespace AIFinancialService.Services
 {
@@ -22,7 +24,7 @@ namespace AIFinancialService.Services
 
 		}
 
-		public async Task<string> GetAiResponseAsync(Guid sessionId, string userMessage) 
+		public async Task<string> GetAiResponseAsync(Guid sessionId, string userMessage, Guid userId) 
 		{
 			await _historyService.EnsureSessionExistsAsync(sessionId);
 
@@ -37,18 +39,7 @@ namespace AIFinancialService.Services
 
 			var dbMessage = await _historyService.GetProjectHistoryAsync(sessionId);
 
-			var history = new ChatHistory("You are a Senior Financial Assistant. Use provided tools to help customers.");
-
-
-			if (dbMessage.Any())
-			{
-				foreach (var message in dbMessage)
-				{
-					var role = string.Equals(message.Role, "User", StringComparison.OrdinalIgnoreCase) ? AuthorRole.User : AuthorRole.Assistant;
-
-					history.AddMessage(role, message.Content);
-				}
-			}
+			var history = await BuildHistoryAsync(sessionId, userMessage, userId);
 
 
 			var settings = new GeminiPromptExecutionSettings
@@ -56,11 +47,15 @@ namespace AIFinancialService.Services
 				ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
 			};
 
+			var arguments = GetExecutionArguments(userId);
+
+			_kernel.Data["userId"] = userId.ToString();
+
 
 			var response = await _chatService.GetChatMessageContentAsync(history, settings, _kernel);
 
-			
-			
+
+
 			string assistantContent = response.ToString();
 
 			
@@ -74,15 +69,15 @@ namespace AIFinancialService.Services
 
 			});
 
-			string usageStats = "Usage data not available";
+			//string usageStats = "Usage data not available";
 
-			if (response.Metadata != null && response.Metadata.TryGetValue("Usage", out var usage))
-			{
-				usageStats = usage?.ToString() ?? "Empty usage";
-			}
+			//if (response.Metadata != null && response.Metadata.TryGetValue("Usage", out var usage))
+			//{
+			//	usageStats = usage?.ToString() ?? "Empty usage";
+			//}
 
-			Console.WriteLine($"AI Raw Response: {assistantContent}");
-			Console.WriteLine($"Metadata Stats: {usageStats}");
+			//Console.WriteLine($"AI Raw Response: {assistantContent}");
+			//Console.WriteLine($"Metadata Stats: {usageStats}");
 
 
 			return assistantContent;
@@ -94,19 +89,27 @@ namespace AIFinancialService.Services
 			Console.WriteLine($"Session {sessionId} has been reset in the database.");
 		}
 
-		public async IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId, string prompt)
+		public async IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId, string prompt, Guid userId)
 		{
 			await _historyService.EnsureSessionExistsAsync(sessionId);
-			var function = _kernel.CreateFunctionFromPrompt(prompt);
+
+			
+
+			
 			var fullResponse = new StringBuilder();
+
+			var history = await BuildHistoryAsync(sessionId, prompt, userId);
 
 			var settings = new GeminiPromptExecutionSettings
 			{
 				ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
 			};
 
+			// This makes it available to any Plugin  that gets called
+			var args = GetExecutionArguments(userId);
 
-			await foreach (var chunk in _kernel.InvokeStreamingAsync<StreamingChatMessageContent>(function, new KernelArguments(settings)))
+
+			await foreach (var chunk in _chatService.GetStreamingChatMessageContentsAsync(history, settings, _kernel))
 			{
 				if (chunk.Content is not null)
 				{
@@ -129,6 +132,39 @@ namespace AIFinancialService.Services
 				Content = fullResponse.ToString(),
 				CreatedAt = DateTime.UtcNow,
 			});
+		}
+
+		private KernelArguments GetExecutionArguments(Guid userId)
+		{
+			var settings = new GeminiPromptExecutionSettings
+			{
+				ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
+			};
+
+			return new KernelArguments(settings)
+			{
+				["userId"] = userId.ToString()
+			};
+		}
+
+		private async Task<ChatHistory> BuildHistoryAsync(Guid sessionId, string userMessage, Guid userId)
+		{
+			var dbMessages = await _historyService.GetProjectHistoryAsync(sessionId);
+
+			var history = new ChatHistory($"You are a helpful Financial Assistant. " +
+						 $"The current logged-in User ID is: {userId}. " +
+						 "Use this ID for any account-related tool calls. " +
+						 "Address the user by name and NEVER repeat the GUID in your response.");
+
+			foreach (var message in dbMessages)
+			{
+				var role = string.Equals(message.Role, "User", StringComparison.OrdinalIgnoreCase)
+						   ? AuthorRole.User : AuthorRole.Assistant;
+				history.AddMessage(role, message.Content);
+			}
+
+			history.AddUserMessage(userMessage);
+			return history;
 		}
 
 	}

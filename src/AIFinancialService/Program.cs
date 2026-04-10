@@ -1,3 +1,4 @@
+using AIFinancialService.Plugins;
 using AIFinancialService.Services;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
@@ -5,6 +6,9 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.SemanticKernel;
 using SharedData.Data;
+using SharedData.Interfaces;
+using SharedData.UserData;
+using SharedData.UserData.Interfaces;
 
 try
 {
@@ -33,9 +37,22 @@ try
 		Console.WriteLine("WARNING: No .env file found in the directory tree.");
 	}
 
+
 	Console.WriteLine("Starting AIFinancialService...");
 	var builder = WebApplication.CreateBuilder(args);
+	builder.Host.UseDefaultServiceProvider(options =>
+	{
+		options.ValidateScopes = false; 
+		options.ValidateOnBuild = false;
+	});
 
+	var kernelBuiler = builder.Services.AddKernel();
+
+	builder.Services.AddTransient<IUserInfo, SqlUserData>();
+
+
+	kernelBuiler.Plugins.AddFromType<BankingInfo>();
+	
 	// 2. CONFIGURATION & SECRETS
 	// This allows variables to be pulled from .env OR System Environment Variables
 	builder.Configuration.AddEnvironmentVariables();
@@ -54,7 +71,7 @@ try
 	if (!string.IsNullOrEmpty(apiKey))
 	{
 		builder.Services.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
-		builder.Services.AddScoped<IFinanceAgentService, FinanceAgentSerivce>();
+		builder.Services.AddTransient<IFinanceAgentService, FinanceAgentSerivce>();
 	}
 	else
 	{
@@ -66,6 +83,8 @@ try
 
 	builder.Services.AddTransient(sp => new Kernel(sp));
 	builder.Services.AddScoped<IChatHistoryService, ChatHistoryService>();
+	builder.Services.AddScoped<IBankingReadService, SqlUserData>();
+
 	builder.Services.AddControllers()
 	.AddJsonOptions(options =>
 	{
