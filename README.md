@@ -22,11 +22,11 @@ This project represents a full-scale modernization of a legacy architecture. I h
 
 ## 🏗️ Architectural Highlights
 - **AI-Enhanced:** Leveraging Semantic Kernel to provide intelligent financial analysis within the microservices ecosystem.
-- **AI Security & Data Isolation: Implemented the Interface Segregation Principle (ISP) to create a hard boundary for AI interactions. The AI Agent is injected with a restricted IBankingReadService, making it physically impossible for the LLM to execute Delete or Update commands, even if it "hallucinates" a request.
+- **AI Security & Data Isolation:** Implemented the Interface Segregation Principle (ISP) to create a hard boundary for AI interactions. The AI Agent is injected with a restricted IBankingReadService, making it physically impossible for the LLM to execute Delete or Update commands, even if it "hallucinates" a request.
 - **Asynchronous Flow:** Fully implemented async/await across the data and service layers to ensure non-blocking I/O.
 - **Security:** Implemented custom Middleware for API Key authentication and protection against BOLA (Broken Object Level Authorization).
 - **Containerized Environment:** Standardized development using Docker, ensuring seamless transitions between local and cloud environments.
-- **Modernized AI Integration: Utilizing Microsoft Semantic Kernel to bridge the gap between Natural Language Processing and structured C# business logic.
+- **Modernized AI Integration:** Utilizing Microsoft Semantic Kernel to bridge the gap between Natural Language Processing and structured C# business logic.
 
 ### 🛡️ Security & Reliability (xUnit + Moq)
 - **BOLA Protection:** Verified via `ReturnsUnauthorized_WhenUserIsNotOwner` across sensitive operations.
