@@ -1,10 +1,11 @@
 ﻿using SharedData.Models;
 using SharedData.Data;
 using SharedData.Interfaces;
+using SharedData.UserData.Interfaces;
 
 namespace SharedData.UserData
 {
-    public class SqlUserData : IUserInfo
+    public class SqlUserData : IUserInfo, IBankingReadService
     {
 		private readonly SeniorDbContext _userContext;
 		public SqlUserData(SeniorDbContext userContext)

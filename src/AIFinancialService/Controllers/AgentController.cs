@@ -46,9 +46,9 @@ namespace AIFinancialService.Controllers
 			// Get gemini response
 			try
 			{
-				return _financeAgentService.StreamFinanceAssistResponse(request.SessionId ,request.UserMessage);
+				return _financeAgentService.StreamFinanceAssistResponse(request.SessionId ,request.UserMessage, userGuid);
 			}
-			catch (Exception e) 
+			catch (Exception) 
 			{
 				throw;
 			}

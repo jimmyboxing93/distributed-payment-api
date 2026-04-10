@@ -2,13 +2,13 @@
 {
 	public interface IFinanceAgentService
 	{
-		//Task<string> GetResponseAsync(string userMessage, CancellationToken ct = default);
-		Task<string> GetAiResponseAsync(Guid sessionId, string userMessage);
+		
+		Task<string> GetAiResponseAsync(Guid sessionId, string userMessage, Guid userId);
 
 		// To reset conversation
 		Task ResetChatAsync(Guid sessionId);
 
-		IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId ,string prompt);
+		IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId ,string prompt, Guid userId);
 
 	}
 }

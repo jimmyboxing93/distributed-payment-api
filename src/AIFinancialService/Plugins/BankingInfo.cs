@@ -1,35 +1,36 @@
 ﻿using Microsoft.SemanticKernel;
 using System.ComponentModel;
 using SharedData.Interfaces;
+using SharedData.UserData.Interfaces;
 
 namespace AIFinancialService.Plugins
 {
 	public class BankingInfo
 	{
-		private readonly IUserInfo _userInfo;
+		private readonly IBankingReadService _readOnlyUserInfo;
 
-		public BankingInfo(IUserInfo userInfo) 
+		public BankingInfo(IBankingReadService readOnlyUserInfo) 
 		{
-			_userInfo = userInfo;
+			_readOnlyUserInfo = readOnlyUserInfo;
 		}
 
 		[KernelFunction]
-		[Description("Retrieves full credit card details for a user based on their unique user ID.")]
+		[Description("Retrieves the logged-in user's credit card details.")]
 		public async Task<string> GetCreditCardDetailsById(
-			[Description("The unique GUID identifier for the user")] string userId) 
+			[Description("The system user context")] string userId)
 			{
 
-				if (!Guid.TryParse(userId, out var guidId))
-				{
-					return $"I could not find a credit card record for that ID: {userId}";
-				}
+			if (!Guid.TryParse(userId, out var guidId))
+			{
+				return "Invalid user ID format.";
+			}
 
-				var user = _userInfo.GetCreditCard(guidId);
+			var user = _readOnlyUserInfo.GetCreditCard(guidId);
 
 			if (user == null) return "User not found.";
 
-			return  $"User: {user.FirstName} {user.LastName}, " +
-					$"Card ending in: {user.LastFourDigits}, " +
+			return  $"Account Holder: {user.FirstName} {user.LastName}, | " +
+					$"Card ending in: {user.LastFourDigits}, | " +
 					$"Current amount: {user.amount:C}, " +
 					$"Expiry: {user.expirationDate:MM/yy}" ;
 			}

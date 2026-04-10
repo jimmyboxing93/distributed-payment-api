@@ -8,6 +8,7 @@ using Microsoft.SemanticKernel;
 using SharedData.Data;
 using SharedData.Interfaces;
 using SharedData.UserData;
+using SharedData.UserData.Interfaces;
 
 try
 {
@@ -82,6 +83,7 @@ try
 
 	builder.Services.AddTransient(sp => new Kernel(sp));
 	builder.Services.AddScoped<IChatHistoryService, ChatHistoryService>();
+	builder.Services.AddScoped<IBankingReadService, SqlUserData>();
 
 	builder.Services.AddControllers()
 	.AddJsonOptions(options =>
