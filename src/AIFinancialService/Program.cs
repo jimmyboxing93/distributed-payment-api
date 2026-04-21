@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.SemanticKernel;
+using Qdrant.Client;
 using SharedData.Data;
 using SharedData.Interfaces;
 using SharedData.UserData;
@@ -46,13 +47,21 @@ try
 		options.ValidateOnBuild = false;
 	});
 
+	builder.Services.AddSingleton<QdrantClient> (sp => 
+		new QdrantClient("localhost", 6334)); 
+
+
+
 	var kernelBuiler = builder.Services.AddKernel();
+
 
 	builder.Services.AddTransient<IUserInfo, SqlUserData>();
 
 
 	kernelBuiler.Plugins.AddFromType<BankingInfo>();
-	
+	kernelBuiler.Plugins.AddFromType<BankKnowledge>();
+
+
 	// 2. CONFIGURATION & SECRETS
 	// This allows variables to be pulled from .env OR System Environment Variables
 	builder.Configuration.AddEnvironmentVariables();
@@ -70,8 +79,13 @@ try
 	// Prevent crash if API Key is missing
 	if (!string.IsNullOrEmpty(apiKey))
 	{
+		// Warning disable SKEXP0070 for Gemini experimental features
+		#pragma warning disable SKEXP0070
 		builder.Services.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
+		builder.Services.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
+		#pragma warning restore SKEXP0070
 		builder.Services.AddTransient<IFinanceAgentService, FinanceAgentSerivce>();
+		builder.Services.AddQdrantVectorStore();
 	}
 	else
 	{
@@ -84,6 +98,7 @@ try
 	builder.Services.AddTransient(sp => new Kernel(sp));
 	builder.Services.AddScoped<IChatHistoryService, ChatHistoryService>();
 	builder.Services.AddScoped<IBankingReadService, SqlUserData>();
+	builder.Services.AddTransient<KnowledgeService>();
 
 	builder.Services.AddControllers()
 	.AddJsonOptions(options =>
