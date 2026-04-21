@@ -3,15 +3,15 @@
 
 ![.NET CI](https://github.com/jimmyboxing93/distributed-payment-api/actions/workflows/dotnet.yml/badge.svg?branch=master)
 ## 🚀 Project Evolution
-This project represents a full-scale modernization of a legacy architecture. I have refactored the codebase from .NET Core 3.1 to **.NET 9**, prioritizing performance, containerization, and modern asynchronous patterns. The solution has been reorganized into a clean `src/` directory structure for better maintainability.
+This project represents a full-scale modernization of a legacy architecture. I have refactored the codebase from .NET Core 3.1 to **.NET 9**, prioritizing performance, containerization, and modern asynchronous patterns. The solution leverages **Semantic Kernel** to bridge structured business logic with generative AI.
 
 ## 🛠️ Tech Stack & Skills
 - **Framework:** .NET 9 (Web API & Razor)
-- **AI Integration:** Microsoft Semantic Kernel (AI Financial Agent logic)
+- **AI Integration:** Microsoft Semantic Kernel (AI Financial Agent logic and LLM & Vector DB Agnostic)
 - **Containerization:** Docker & Docker-Compose (Multi-container orchestration)
 - **CI/CD:** GitHub Actions (Automated Build & Test pipelines)
 - **Architecture:** Microservices, Repository Pattern, Dependency Injection
-- **Database:** SQL Server with Entity Framework Core 9
+- **Database:** SQL Server with EF Core 9 & Qdrant (Vector Store)
 
 ## 📂 Project Structure
 - `src/PaymentGateway.API`: Core processing engine and Merchant logic.
@@ -21,7 +21,10 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - `src/PaymentProcessing.Tests`: Comprehensive xUnit and Moq suite.
 
 ## 🏗️ Architectural Highlights
-- **AI-Enhanced:** Leveraging Semantic Kernel to provide intelligent financial analysis within the microservices ecosystem.
+- **LLM & Vector Agnostic:** The AI layer is built using Semantic Kernel's abstraction layer. By swapping NuGet packages and configuration, the system can transition between **Google Gemini, OpenAI, or Anthropic**, and from **Qdrant to Pinecone or Milvus** without rewriting core business logic.
+- **Hybrid AI Grounding (RAG + SQL):** The AI Agent performs "Real-World Grounding" by orchestrating two distinct data streams:
+    1. **Unstructured Data:** RAG via Qdrant for banking policies and documentation.
+    2. **Structured Data:** Native C# plugins for live SQL account lookups.
 - **AI Security & Data Isolation:** Implemented the Interface Segregation Principle (ISP) to create a hard boundary for AI interactions. The AI Agent is injected with a restricted IBankingReadService, making it physically impossible for the LLM to execute Delete or Update commands, even if it "hallucinates" a request.
 - **Asynchronous Flow:** Fully implemented async/await across the data and service layers to ensure non-blocking I/O.
 - **Security:** Implemented custom Middleware for API Key authentication and protection against BOLA (Broken Object Level Authorization).
@@ -39,7 +42,7 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - [x] Dockerize full environment
 - [x] Implement xUnit & Moq for Core Logic
 - [x] Implement Interface Segregation for AI Safety (Read-Only Plugin)
-- [ ] Research RAG (Retrieval-Augmented Generation) for Bank Policy Documentation
+- [x] **Integrated RAG (Retrieval-Augmented Generation) for Bank Policies**
 - [ ] Integrate AutoMapper for DTO management
 
 
