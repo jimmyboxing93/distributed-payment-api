@@ -1,7 +1,4 @@
 ﻿using System.Text;
-using AIFinancialService.Plugins;
-using AIFinancialService.Services;
-using Google.GenAI;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
@@ -69,16 +66,6 @@ namespace AIFinancialService.Services
 
 			});
 
-			//string usageStats = "Usage data not available";
-
-			//if (response.Metadata != null && response.Metadata.TryGetValue("Usage", out var usage))
-			//{
-			//	usageStats = usage?.ToString() ?? "Empty usage";
-			//}
-
-			//Console.WriteLine($"AI Raw Response: {assistantContent}");
-			//Console.WriteLine($"Metadata Stats: {usageStats}");
-
 
 			return assistantContent;
 		}
@@ -93,9 +80,6 @@ namespace AIFinancialService.Services
 		{
 			await _historyService.EnsureSessionExistsAsync(sessionId);
 
-			
-
-			
 			var fullResponse = new StringBuilder();
 
 			var history = await BuildHistoryAsync(sessionId, prompt, userId);
@@ -151,10 +135,14 @@ namespace AIFinancialService.Services
 		{
 			var dbMessages = await _historyService.GetProjectHistoryAsync(sessionId);
 
-			var history = new ChatHistory($"You are a helpful Financial Assistant. " +
-						 $"The current logged-in User ID is: {userId}. " +
-						 "Use this ID for any account-related tool calls. " +
-						 "Address the user by name and NEVER repeat the GUID in your response.");
+			// Updated System Message for RAG awareness
+			var systemPrompt = $"You are a helpful Financial Assistant. " +
+					   $"The current logged-in User ID is: {userId}. " +
+					   "You have access to internal bank policy documents. " +
+					   "If a user asks about fees, limits, or rules, use the 'search_bank_policies' tool before answering. " +
+					   "Address the user by name and NEVER repeat the GUID in your response.";
+
+			var history = new ChatHistory(systemPrompt);
 
 			foreach (var message in dbMessages)
 			{

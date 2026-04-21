@@ -1,6 +1,5 @@
 ﻿using Microsoft.SemanticKernel;
 using System.ComponentModel;
-using SharedData.Interfaces;
 using SharedData.UserData.Interfaces;
 
 namespace AIFinancialService.Plugins

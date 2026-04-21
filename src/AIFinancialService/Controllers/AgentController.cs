@@ -1,9 +1,8 @@
 using AIFinancialService.Services;
 using Microsoft.AspNetCore.Mvc;
 using AIFinancialService.Models;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.Google;
+using UglyToad.PdfPig;
+using System.Text;
 
 
 namespace AIFinancialService.Controllers
@@ -14,12 +13,14 @@ namespace AIFinancialService.Controllers
 	{
 		private readonly IChatHistoryService _chatHistoryService;
 		private readonly IFinanceAgentService _financeAgentService;
+		private readonly KnowledgeService _knowledgeService;
 		
-		public AgentController(IChatHistoryService chatHistoryService, IFinanceAgentService financeAgentService)
+		public AgentController(IChatHistoryService chatHistoryService, IFinanceAgentService financeAgentService, KnowledgeService knowledgeService)
 		{
 			
 			_chatHistoryService = chatHistoryService;
 			_financeAgentService = financeAgentService;
+			_knowledgeService = knowledgeService;
 		}
 
 		[HttpGet("history/{sessionId}")]
@@ -54,6 +55,36 @@ namespace AIFinancialService.Controllers
 			}
 		}
 
+		[HttpPost("upload-policy")]
+		public async Task<IActionResult> PolicyResult(IFormFile file) 
+		{
+			if (file == null || file.Length == 0) return BadRequest("No file uploaded");
+
+			var textBuilder = new StringBuilder();
+
+			using (var stream = file.OpenReadStream())
+			using (var pdf = PdfDocument.Open(stream))
+			{
+				foreach (var page in pdf.GetPages()) 
+				{
+					// PdfPig handles the text extraction page by page
+					textBuilder.AppendLine(page.Text);
+				}
+			}
+
+			var fullText = textBuilder.ToString();
+
+			if (string.IsNullOrWhiteSpace(fullText))
+				return BadRequest("Could not extract text from pdf.");
+
+			await _knowledgeService.IngestPolicyAsync(fullText);
+
+			return Ok(new
+			{
+				Message = "Policy Ingested successfully!",
+				CharacterCount = fullText.Length
+			});
+		}
 
 
 	}
