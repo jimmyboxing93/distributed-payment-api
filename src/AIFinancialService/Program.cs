@@ -84,7 +84,7 @@ try
 		builder.Services.AddGoogleAIGeminiChatCompletion(modelId, apiKey);
 		builder.Services.AddGoogleAIEmbeddingGenerator("gemini-embedding-001", apiKey);
 		#pragma warning restore SKEXP0070
-		builder.Services.AddTransient<IFinanceAgentService, FinanceAgentSerivce>();
+		builder.Services.AddTransient<IFinanceAgentService, FinanceAgentService>();
 		builder.Services.AddQdrantVectorStore();
 	}
 	else
