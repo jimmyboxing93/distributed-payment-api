@@ -6,14 +6,14 @@ using SharedData.Models;
 
 namespace AIFinancialService.Services
 {
-	public class FinanceAgentSerivce : IFinanceAgentService
+	public class FinanceAgentService : IFinanceAgentService
 	{
 		private readonly Kernel _kernel;
 		private readonly IChatCompletionService _chatService;
 		private readonly IChatHistoryService _historyService;
 
 
-		public FinanceAgentSerivce(Kernel kernel, IChatCompletionService chatCompletion, IChatHistoryService historyService) 
+		public FinanceAgentService(Kernel kernel, IChatCompletionService chatCompletion, IChatHistoryService historyService) 
 		{
 			_kernel = kernel;
 			_chatService = kernel.GetRequiredService<IChatCompletionService>();
