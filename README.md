@@ -21,6 +21,7 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - `src/PaymentProcessing.Tests`: Comprehensive xUnit and Moq suite.
 
 ## 🏗️ Architectural Highlights
+- **Stateless IAM (Identity & Access Management):** Implemented a robust JWT-based authentication lifecycle. By moving away from legacy stateful cookies, the system supports decoupled microservices and remains horizontally scalable.
 - **LLM & Vector Agnostic:** The AI layer is built using Semantic Kernel's abstraction layer. By swapping NuGet packages and configuration, the system can transition between **Google Gemini, OpenAI, or Anthropic**, and from **Qdrant to Pinecone or Milvus** without rewriting core business logic.
 - **Hybrid AI Grounding (RAG + SQL):** The AI Agent performs "Real-World Grounding" by orchestrating two distinct data streams:
     1. **Unstructured Data:** RAG via Qdrant for banking policies and documentation.
@@ -33,25 +34,31 @@ This project represents a full-scale modernization of a legacy architecture. I h
 
 ### 🛡️ Security & Reliability (xUnit + Moq)
 - **BOLA Protection:** Verified via `ReturnsUnauthorized_WhenUserIsNotOwner` across sensitive operations.
+- **Auth Challenge Logic:** Custom middleware overrides to ensure 401 Unauthorized status codes are returned for API consumers, preventing silent HTML redirects.
 - **Data Integrity:** Ensured via `Verify(Times.Never)` to confirm no unauthorized database writes occur.
 - **Input Validation:** Strict validation for credit card processing and financial data inputs.
 
 ## 📈 Roadmap (Active Dev)
 - [x] Refactor UI and API to .NET 9
 - [x] Reorganize Solution Architecture (`/src` pattern)
+- [x] Implement Stateless JWT Authentication & Identity Stores
 - [x] Dockerize full environment
 - [x] Implement xUnit & Moq for Core Logic
 - [x] Implement Interface Segregation for AI Safety (Read-Only Plugin)
 - [x] **Integrated RAG (Retrieval-Augmented Generation) for Bank Policies**
+- [ ] Integrate Swagger/OpenAPI for RESTful Documentation
 - [ ] Integrate AutoMapper for DTO management
 
 
 
 ```mermaid
 graph TD
-    User((User / Recruiter)) -->|HTTPS| MVC[ASP.NET Core 9 MVC]
-
-    subgraph "Backend Orchestration (Secure Layer)"
+    User((User / Recruiter)) -->|HTTPS Request| Gate{JWT Auth Gate}
+    
+    subgraph "Backend Orchestration (.NET 9)"
+        Gate -->|Valid Token| MVC[ASP.NET Core 9 Controllers]
+        Gate -->|Missing/Invalid| 401[401 Unauthorized Response]
+        
         MVC -->|Injected| Services[Domain Services & Interfaces]
         
         %% The Isolation Logic
@@ -61,9 +68,10 @@ graph TD
         AI <-->|Semantic Kernel| Gemini[Gemini Pro]
     end
 
-    subgraph "Infrastructure"
-        PaymentAPI -->|EF Core 9| DB[(SQL Server)]
+    subgraph "Infrastructure (Dockerized)"
+        PaymentAPI -->|EF Core 9| DB[(SQL Server 2022)]
         AI -.->|Read-Only Access| DB
+        Env[.env File] -->|Injected Secrets| PaymentAPI
     end
 
     subgraph "CI/CD & Quality Control"
@@ -75,5 +83,5 @@ graph TD
 
     %% Validating the code
     Pass -.->|Validates Isolation| AI
-    Pass -.->|Validates Auth| PaymentAPI
+    Pass -.->|Validates JWT Auth| Gate
 ```
