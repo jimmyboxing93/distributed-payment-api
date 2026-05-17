@@ -9,7 +9,5 @@ namespace AIFinancialService.Models
 		[JsonPropertyName("UserMessage")]
 		public string UserMessage { get; set; } = string.Empty;
 
-		[JsonPropertyName("UserId")]
-		public string? UserId { get; set; }
 	}
 }

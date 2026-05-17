@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 using AIFinancialService.Models;
 using UglyToad.PdfPig;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 
 namespace AIFinancialService.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
+	[Authorize]
 	public class AgentController : ControllerBase
 	{
 		private readonly IChatHistoryService _chatHistoryService;
@@ -40,14 +43,10 @@ namespace AIFinancialService.Controllers
 				throw new BadHttpRequestException("Message cannot be empty");
 			}
 
-			if (!Guid.TryParse(request.UserId, out Guid userGuid)) 
-			{
-				throw new BadHttpRequestException("Invalid User ID format. Please provide a valid GUID.");
-			}
 			// Get gemini response
 			try
 			{
-				return _financeAgentService.StreamFinanceAssistResponse(request.SessionId ,request.UserMessage, userGuid);
+				return _financeAgentService.StreamFinanceAssistResponse(request.SessionId ,request.UserMessage);
 			}
 			catch (Exception) 
 			{

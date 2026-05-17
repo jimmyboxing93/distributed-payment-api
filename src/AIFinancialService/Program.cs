@@ -1,6 +1,5 @@
 using AIFinancialService.Plugins;
 using AIFinancialService.Services;
-using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -56,6 +55,7 @@ try
 
 
 	builder.Services.AddTransient<IUserInfo, SqlUserData>();
+	builder.Services.AddHttpContextAccessor();
 
 
 	kernelBuiler.Plugins.AddFromType<BankingInfo>();
@@ -107,11 +107,44 @@ try
 		options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 	});
 
+	var jwtSecretKey = System.Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Secret"];
+	var jwtIssuer = System.Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"];
+	var jwtAudience = System.Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["Jwt:Audience"];
+
+	builder.Services.AddAuthentication(options =>
+	{
+		options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+		options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+	})
+	.AddJwtBearer(options =>
+	{
+		options.RequireHttpsMetadata = false;
+		options.SaveToken = true;
+		options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidIssuer = jwtIssuer,
+
+			ValidateAudience = true,
+			ValidAudience = jwtAudience,
+
+			ValidateLifetime = true,
+			ClockSkew = TimeSpan.FromMinutes(5),
+
+			ValidateIssuerSigningKey = true,
+			IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtSecretKey ?? "FallbackSecretKeyForLocalCompilationOnly"))
+		};
+	});
+
 
 	// 4. BUILD & RUN
 	var app = builder.Build();
 
 	Console.WriteLine("App Build Successful. Mapping routes...");
+
+	app.UseRouting(); 
+	app.UseAuthentication(); 
+	app.UseAuthorization();
 	app.MapControllers();
 
 	Console.WriteLine("Everything ready. Running app...");

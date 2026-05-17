@@ -3,12 +3,12 @@
 	public interface IFinanceAgentService
 	{
 		
-		Task<string> GetAiResponseAsync(Guid sessionId, string userMessage, Guid userId);
+		Task<string> GetAiResponseAsync(Guid sessionId, string userMessage);
 
 		// To reset conversation
 		Task ResetChatAsync(Guid sessionId);
 
-		IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId ,string prompt, Guid userId);
+		IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId ,string prompt);
 
 	}
 }
