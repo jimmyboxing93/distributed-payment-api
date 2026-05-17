@@ -2,6 +2,7 @@
 **Modernized .NET 9 Microservices Architecture**
 
 ![.NET CI](https://github.com/jimmyboxing93/distributed-payment-api/actions/workflows/dotnet.yml/badge.svg?branch=master)
+
 ## 🚀 Project Evolution
 This project represents a full-scale modernization of a legacy architecture. I have refactored the codebase from .NET Core 3.1 to **.NET 9**, prioritizing performance, containerization, and modern asynchronous patterns. The solution leverages **Semantic Kernel** to bridge structured business logic with generative AI.
 
@@ -21,12 +22,12 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - `src/PaymentProcessing.Tests`: Comprehensive xUnit and Moq suite.
 
 ## 🏗️ Architectural Highlights
-- **Stateless IAM (Identity & Access Management):** Implemented a robust JWT-based authentication lifecycle. By moving away from legacy stateful cookies, the system supports decoupled microservices and remains horizontally scalable.
+- **Stateless IAM & Context Extraction:** Implemented a pure cryptographically signed JWT authentication lifecycle. Downstream AI microservices do not accept user identity strings inside message bodies or request payloads, entirely eliminating ID-tampering and enumeration attacks. Instead, services utilize an injected `IHttpContextAccessor` to safely pull validated identity parameters (`ClaimTypes.NameIdentifier`) directly out of the ambient request pipeline header context.
 - **LLM & Vector Agnostic:** The AI layer is built using Semantic Kernel's abstraction layer. By swapping NuGet packages and configuration, the system can transition between **Google Gemini, OpenAI, or Anthropic**, and from **Qdrant to Pinecone or Milvus** without rewriting core business logic.
 - **Hybrid AI Grounding (RAG + SQL):** The AI Agent performs "Real-World Grounding" by orchestrating two distinct data streams:
     1. **Unstructured Data:** RAG via Qdrant for banking policies and documentation.
     2. **Structured Data:** Native C# plugins for live SQL account lookups.
-- **AI Security & Data Isolation:** Implemented the Interface Segregation Principle (ISP) to create a hard boundary for AI interactions. The AI Agent is injected with a restricted IBankingReadService, making it physically impossible for the LLM to execute Delete or Update commands, even if it "hallucinates" a request.
+- **AI Security & Data Isolation:** Implemented the Interface Segregation Principle (ISP) to create a hard boundary for AI interactions. The AI Agent is injected with a restricted `IBankingReadService`, making it physically impossible for the LLM to execute Delete or Update commands, even if it "hallucinates" a request.
 - **Asynchronous Flow:** Fully implemented async/await across the data and service layers to ensure non-blocking I/O.
 - **Security:** Implemented custom Middleware for API Key authentication and protection against BOLA (Broken Object Level Authorization).
 - **Containerized Environment:** Standardized development using Docker, ensuring seamless transitions between local and cloud environments.
@@ -42,6 +43,7 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - [x] Refactor UI and API to .NET 9
 - [x] Reorganize Solution Architecture (`/src` pattern)
 - [x] Implement Stateless JWT Authentication & Identity Stores
+- [x] Refactor AI Services to extract secure identities via JWT claim context
 - [x] Dockerize full environment
 - [x] Implement xUnit & Moq for Core Logic
 - [x] Implement Interface Segregation for AI Safety (Read-Only Plugin)
@@ -49,28 +51,26 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - [ ] Integrate Swagger/OpenAPI for RESTful Documentation
 - [ ] Integrate AutoMapper for DTO management
 
-
-
 ```mermaid
 graph TD
-    User((User / Recruiter)) -->|HTTPS Request| Gate{JWT Auth Gate}
+    User((User / Recruiter)) -->|HTTPS Request + Bearer Header| Gate{JWT Auth Gate}
     
     subgraph "Backend Orchestration (.NET 9)"
-        Gate -->|Valid Token| MVC[ASP.NET Core 9 Controllers]
+        Gate -->|Valid Token Context| MVC[ASP.NET Core 9 Controllers]
         Gate -->|Missing/Invalid| 401[401 Unauthorized Response]
         
-        MVC -->|Injected| Services[Domain Services & Interfaces]
+        MVC -->|Injected HttpContext| Services[Domain Services & Interfaces]
         
         %% The Isolation Logic
         Services -->|Full CRUD IUserInfo| PaymentAPI[PaymentGateway API]
-        Services -->|Read-Only IBankingReadService| AI[AI Agent Layer]
+        Services -->|Stateless Claims Extraction| AI[AI Agent Layer / Semantic Kernel]
         
-        AI <-->|Semantic Kernel| Gemini[Gemini Pro]
+        AI <-->|Kernel Orchestration| Gemini[Gemini Pro]
     end
 
     subgraph "Infrastructure (Dockerized)"
         PaymentAPI -->|EF Core 9| DB[(SQL Server 2022)]
-        AI -.->|Read-Only Access| DB
+        AI -.->|Restricted Read-Only Access| DB
         Env[.env File] -->|Injected Secrets| PaymentAPI
     end
 
@@ -84,4 +84,3 @@ graph TD
     %% Validating the code
     Pass -.->|Validates Isolation| AI
     Pass -.->|Validates JWT Auth| Gate
-```
