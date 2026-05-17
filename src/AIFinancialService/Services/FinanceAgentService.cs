@@ -9,20 +9,23 @@ namespace AIFinancialService.Services
 	public class FinanceAgentService : IFinanceAgentService
 	{
 		private readonly Kernel _kernel;
+		private readonly IHttpContextAccessor _httpContextAccessor;
 		private readonly IChatCompletionService _chatService;
 		private readonly IChatHistoryService _historyService;
 
 
-		public FinanceAgentService(Kernel kernel, IChatCompletionService chatCompletion, IChatHistoryService historyService) 
+		public FinanceAgentService(Kernel kernel, IHttpContextAccessor httpContextAccessor, IChatCompletionService chatCompletion, IChatHistoryService historyService) 
 		{
 			_kernel = kernel;
+			_httpContextAccessor = httpContextAccessor;
 			_chatService = kernel.GetRequiredService<IChatCompletionService>();
 			_historyService = historyService;
 
 		}
 
-		public async Task<string> GetAiResponseAsync(Guid sessionId, string userMessage, Guid userId) 
+		public async Task<string> GetAiResponseAsync(Guid sessionId, string userMessage) 
 		{
+			var userId = GetUserIdFromClaims();
 			await _historyService.EnsureSessionExistsAsync(sessionId);
 
 			await _historyService.SaveMessageAsync(new ChatMessageRecord
@@ -76,8 +79,9 @@ namespace AIFinancialService.Services
 			Console.WriteLine($"Session {sessionId} has been reset in the database.");
 		}
 
-		public async IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId, string prompt, Guid userId)
+		public async IAsyncEnumerable<string> StreamFinanceAssistResponse(Guid sessionId, string prompt)
 		{
+			var userId = GetUserIdFromClaims();
 			await _historyService.EnsureSessionExistsAsync(sessionId);
 
 			var fullResponse = new StringBuilder();
@@ -89,8 +93,10 @@ namespace AIFinancialService.Services
 				ToolCallBehavior = GeminiToolCallBehavior.AutoInvokeKernelFunctions
 			};
 
+			_kernel.Data["userId"] = userId.ToString();
+
 			// This makes it available to any Plugin  that gets called
-			var args = GetExecutionArguments(userId);
+			//var args = GetExecutionArguments(userId);
 
 
 			await foreach (var chunk in _chatService.GetStreamingChatMessageContentsAsync(history, settings, _kernel))
@@ -155,5 +161,15 @@ namespace AIFinancialService.Services
 			return history;
 		}
 
+		private Guid GetUserIdFromClaims()
+		{
+			var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+			if (claim == null) throw new UnauthorizedAccessException("User context is missing in JWT.");
+			return Guid.Parse(claim.Value);
+
+		}
+
+
 	}
+
 }

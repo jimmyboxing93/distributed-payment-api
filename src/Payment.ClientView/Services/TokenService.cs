@@ -10,9 +10,11 @@ namespace Payment.ClientView.Services
 	public class TokenService : ITokenService
 	{
 		private readonly SymmetricSecurityKey _key;
+		private readonly IConfiguration _config;
 
 		public TokenService(IConfiguration config) 
 		{
+			_config = config;
 			var secret = Environment.GetEnvironmentVariable("JWT_KEY") ?? config["Jwt:Key"];
 			if (string.IsNullOrEmpty(secret) || secret.Length < 32) 
 			{
@@ -31,11 +33,16 @@ namespace Payment.ClientView.Services
 
 			var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256Signature);
 
+			var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _config["Jwt:Issuer"];
+			var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _config["Jwt:Audience"];
+
 			var tokenDescriptor = new SecurityTokenDescriptor
 			{
 				Subject = new ClaimsIdentity(claims),
-				Expires = DateTime.Now.AddDays(7),
-				SigningCredentials = creds
+				Expires = DateTime.UtcNow.AddDays(7),
+				SigningCredentials = creds,
+				Issuer = issuer,
+				Audience = audience
 			};
 
 			var tokenHandler = new JwtSecurityTokenHandler();
