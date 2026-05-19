@@ -52,28 +52,31 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - [ ] Integrate AutoMapper for DTO management
 
 ```mermaid
-graph LR
-    User((User / Recruiter)) -->|HTTPS Request<br>+ Bearer Header| Gate{JWT Auth Gate}
+graph TD
+    User((User / Recruiter)) -->|HTTPS Request + Bearer Header| Gate{JWT Auth Gate}
     
+    %% MAIN FLOW LAYER
     subgraph Backend_Orchestration["Backend Orchestration (.NET 9)"]
         Gate -->|Valid Token Context| MVC[ASP.NET Core 9 Controllers]
-        Gate -->|Missing / Invalid| 401[401 Unauthorized]
+        Gate -->|Missing/Invalid| 401[401 Unauthorized Response]
         
         MVC -->|Injected HttpContext| Services[Domain Services & Interfaces]
         
-        %% Splitting these out clearly to avoid cross-over overlap
+        %% Side-by-side positioning inside the orchestrator
         Services -->|Full CRUD<br>IUserInfo| PaymentAPI[PaymentGateway API]
-        Services -->|Stateless Claims<br>Extraction| AI[AI Agent Layer<br>Semantic Kernel]
+        Services -->|Stateless Claims<br>Extraction| AI[AI Agent Layer / Semantic Kernel]
         
-        AI <-->|Kernel<br>Orchestration| Gemini[Gemini Pro]
+        AI <-->|Kernel Orchestration| Gemini[Gemini Pro]
     end
 
+    %% INFRASTRUCTURE LAYER (Positioned neatly right beneath the API)
     subgraph Infrastructure["Infrastructure (Dockerized)"]
         PaymentAPI -->|EF Core 9| DB[(SQL Server 2022)]
-        AI -.->|Restricted Read-Only<br>Access| DB
+        AI -.->|Restricted Read-Only Access| DB
         Env[.env File] -->|Injected Secrets| PaymentAPI
     end
 
+    %% QUALITY LAYER (Shifted to stack cleanly below or beside)
     subgraph Quality_Control["CI/CD & Quality Control"]
         Actions[GitHub Actions] -->|Verify| Build[Build & Compile]
         Build -->|Execute| Tests[xUnit / Moq Suite]
@@ -81,6 +84,6 @@ graph LR
         style Pass fill:#d4edda,stroke:#28a745,stroke-width:2px
     end
 
-    %% Clear validation cross-links mapped neatly below the main flow
+    %% Validation cross-links that cleanly span without skewing the graph width
     Pass -.->|Validates Isolation| AI
     Pass -.->|Validates JWT Auth| Gate
