@@ -20,14 +20,25 @@ namespace SharedData.UserData
 
         public UserInfo GetCreditCard(Guid id)
         {
-            var user = _userContext.CreditCardInfo.Find(id);
-            return user;
+            var user = _userContext.CreditCardInfo.FirstOrDefault(u => u.UserID == id);
+
+			// Safeguard against null returns to satisfy the compiler warning completely
+			if (user == null)
+			{
+				throw new KeyNotFoundException($"No credit card records found matching the identity key: {id}");
+			}
+
+			return user;
         }
 
         public UserInfo AddCreditCard(UserInfo userInfo)
         {
-            userInfo.UserID = Guid.NewGuid();
-            _userContext.CreditCardInfo.Add(userInfo);
+
+			if (userInfo.UserID == Guid.Empty)
+			{
+				userInfo.UserID = Guid.NewGuid();
+			}
+			_userContext.CreditCardInfo.Add(userInfo);
             _userContext.SaveChanges();
             return userInfo;
         }
@@ -38,11 +49,10 @@ namespace SharedData.UserData
 
             if (ExistingUser != null)
             {
-                ExistingUser.PasswordHash = userInfo.PasswordHash;
+                
                 ExistingUser.FirstName = userInfo.FirstName;
                 ExistingUser.LastName = userInfo.LastName;
                 ExistingUser.creditCardNumber = userInfo.creditCardNumber;
-                ExistingUser.ccv = userInfo.ccv;
                 ExistingUser.expirationDate = userInfo.expirationDate;
                 ExistingUser.amount = userInfo.amount;
                 ExistingUser.Name = userInfo.Name; 

@@ -14,9 +14,6 @@ namespace SharedData.Models
         [Key]
         public Guid UserID { get; set; }
 
-        //Passsword should never be stored as plain text
-        [Required]
-        public string PasswordHash { get; set; }
 
         [Required]
         [RegularExpression(@"^[a-zA-Z]+$", ErrorMessage = "Use letters only please")]
@@ -32,12 +29,6 @@ namespace SharedData.Models
         public string creditCardNumber { get; set; }
 
 		public string LastFourDigits { get; set; }
-
-
-		[Required(ErrorMessage = "Please enter valid security code")]
-        [StringLength(3, MinimumLength = 3, ErrorMessage = "Please enter only 3 digits")]
-        [RegularExpression("([1-9][0-9]*)", ErrorMessage = "Only number allowed")]
-        public string ccv { get; set; }
 
        
         public DateTime expirationDate { get; set; }

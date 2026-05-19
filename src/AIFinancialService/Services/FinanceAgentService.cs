@@ -95,9 +95,8 @@ namespace AIFinancialService.Services
 
 			_kernel.Data["userId"] = userId.ToString();
 
-			// This makes it available to any Plugin  that gets called
-			//var args = GetExecutionArguments(userId);
-
+			
+			_kernel.Data["userId"] = userId.ToString();
 
 			await foreach (var chunk in _chatService.GetStreamingChatMessageContentsAsync(history, settings, _kernel))
 			{
