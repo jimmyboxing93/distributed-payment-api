@@ -15,20 +15,24 @@ namespace PaymentGateway.API.Controllers
     [Authorize]
     public class HomeController : Controller
     {
-        PaymentAPI api = new PaymentAPI();
+        PaymentAPI _api = new PaymentAPI();
+        private readonly string _apiKey;
+
+        public HomeController(IConfiguration configuration) 
+        {
+            _apiKey = configuration["API_KEY"] ?? throw new ArgumentNullException("API_KEY variable is not set.");
+        }
 
         public async Task<IActionResult> Index()
         {
             List<UserInfo> creditCards = new List<UserInfo>();
+            var client = GetConfiguredClient();
 
-            HttpClient client = api.Initial();
-
-            client.DefaultRequestHeaders.Add("ApiKey", "df008b2e24f947b1b873c94d8a3f2201");
-            HttpResponseMessage res = await client.GetAsync("api/Api");
+             HttpResponseMessage res = await client.GetAsync("api/Api");
             if (res.IsSuccessStatusCode)
             {
 
-                var results = res.Content.ReadAsStringAsync().Result;
+                var results = await res.Content.ReadAsStringAsync();
 
                 creditCards = JsonConvert.DeserializeObject<List<UserInfo>>(results);
 
@@ -39,15 +43,13 @@ namespace PaymentGateway.API.Controllers
         public async Task<IActionResult> PaymentDetails(Guid id)
         {
             var creditCard = new UserInfo();
+			var client = GetConfiguredClient();
 
-            HttpClient client = api.Initial();
-
-            client.DefaultRequestHeaders.Add("ApiKey", "df008b2e24f947b1b873c94d8a3f2201");
             HttpResponseMessage res = await client.GetAsync($"api/Api/{id}");
 
             if (res.IsSuccessStatusCode)
             {
-                var results = res.Content.ReadAsStringAsync().Result;
+                var results = await res.Content.ReadAsStringAsync();
 
                 creditCard = JsonConvert.DeserializeObject<UserInfo>(results);
 
@@ -64,18 +66,15 @@ namespace PaymentGateway.API.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Payment(UserInfo model)
+        public async Task<IActionResult> Payment(UserInfo model)
         {
 
-            HttpClient client = api.Initial();
+			var client = GetConfiguredClient();
 
-            client.DefaultRequestHeaders.Add("ApiKey", "df008b2e24f947b1b873c94d8a3f2201");
-            var postTask = client.PostAsJsonAsync<UserInfo>("api/Api", model);
-            postTask.Wait();
+            var result = await client.PostAsJsonAsync("api/Api", model);
 
-            var result = postTask.Result;
 
-            if (result.IsSuccessStatusCode)
+			if (result.IsSuccessStatusCode)
             {
                 return RedirectToAction("Index");
             }
@@ -83,22 +82,18 @@ namespace PaymentGateway.API.Controllers
             return View();
         }
 
-        public ActionResult Edit(Guid id)
+        public async Task<IActionResult> Edit(Guid id)
         {
             var creditCard = new UserInfo();
 
-            HttpClient client = api.Initial();
+			var client = GetConfiguredClient();
+			var res = await client.GetAsync($"api/Api/{id}");
+            
 
-            client.DefaultRequestHeaders.Add("ApiKey", "df008b2e24f947b1b873c94d8a3f2201");
-            var res = client.GetAsync($"api/Api/{id}");
-            res.Wait();
-
-            var readData = res.Result;
-
-            if (readData.IsSuccessStatusCode)
+            if (res.IsSuccessStatusCode)
             {
 
-                var results = readData.Content.ReadAsStringAsync().Result;
+                var results = await res.Content.ReadAsStringAsync();
                 
                 creditCard = JsonConvert.DeserializeObject<UserInfo>(results);
 
@@ -109,15 +104,12 @@ namespace PaymentGateway.API.Controllers
         }
 
         [HttpPost]
-        public ActionResult Edit(UserInfo model, Guid id)
+        public  async Task<ActionResult> Edit(UserInfo model, Guid id)
         {
-            HttpClient client = api.Initial();
 
-            client.DefaultRequestHeaders.Add("ApiKey", "df008b2e24f947b1b873c94d8a3f2201");
-            var putTask = client.PutAsJsonAsync<UserInfo>($"api/API/{id}", model);
-            putTask.Wait();
-
-            var result = putTask.Result;
+			var client = GetConfiguredClient();
+			var result = await client.PutAsJsonAsync<UserInfo>($"api/API/{id}", model);
+            
 
             if (result.IsSuccessStatusCode)
 
@@ -133,14 +125,17 @@ namespace PaymentGateway.API.Controllers
 
         public async Task<IActionResult> Delete(Guid id)
         {
-            var creditCard = new UserInfo();
-
-            HttpClient client = api.Initial();
-
-            client.DefaultRequestHeaders.Add("ApiKey", "df008b2e24f947b1b873c94d8a3f2201");
-            HttpResponseMessage res = await client.DeleteAsync($"api/Api/{id}");
+			var client = GetConfiguredClient();
+			await client.DeleteAsync($"api/Api/{id}");
 
             return RedirectToAction("Index");
+        }
+
+        private HttpClient GetConfiguredClient() 
+        {
+            HttpClient client = _api.Initial();
+            client.DefaultRequestHeaders.Add("API_KEY", _apiKey);
+            return client;
         }
 
     }

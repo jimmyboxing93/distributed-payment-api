@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Payment.ClientView.Services;
-using ViewApi.Data;
+using SharedData.Interfaces;
+using SharedData.UserData;
+using SharedData.Data;
 
 namespace ViewApi
 {
@@ -39,10 +41,13 @@ namespace ViewApi
 		        options.UseSqlServer(connectionString));
 
 
-			services.AddIdentity<IdentityUser, IdentityRole>()
-					.AddEntityFrameworkStores<SeniorDbContext>();
+			services.AddIdentity<SharedData.Models.User, IdentityRole<Guid>>()
+                    .AddEntityFrameworkStores<SharedData.Data.SeniorDbContext>()
+                    .AddDefaultTokenProviders();
 
-            var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
+			services.AddScoped<IUserInfo, SqlUserData>();
+
+			var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
 
             if (string.IsNullOrEmpty(jwtKey)) 
             {

@@ -45,7 +45,7 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - [x] Dockerize full environment
 - [x] Implement xUnit & Moq for Core Logic
 - [x] Implement Interface Segregation for AI Safety (Read-Only Plugin)
-- [x] **Integrated RAG (Retrieval-Augmented Generation) for Bank Policies**
+- [x] Integrated RAG (Retrieval-Augmented Generation) for Bank Policies
 - [ ] Integrate Swagger/OpenAPI for RESTful Documentation
 - [ ] Integrate AutoMapper for DTO management
 

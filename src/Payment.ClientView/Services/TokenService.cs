@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using SharedData.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -23,11 +23,11 @@ namespace Payment.ClientView.Services
 			_key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
 		}
 
-		public string CreateToken(IdentityUser user) 
+		public string CreateToken(User user) 
 		{
 			var claims = new List<Claim>
 			{
-				new Claim(JwtRegisteredClaimNames.NameId, user.Id),
+				new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
 				new Claim(JwtRegisteredClaimNames.Email, user.Email)
 			};
 

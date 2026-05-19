@@ -1,3 +1,4 @@
+using SharedData.Interfaces;
 using SharedData.Data;
 
 namespace ViewApi
@@ -37,8 +38,8 @@ namespace ViewApi
 				}
 			}
 
-			CreateHostBuilder(args).Build().Run();
-        }
+			host.Run();
+		}
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)

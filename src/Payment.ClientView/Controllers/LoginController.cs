@@ -4,78 +4,112 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Payment.ClientView.Services;
+using SharedData.Interfaces;
 using ViewApi.Models;
+
+
+
 
 namespace PaymentGateway.API.Controllers
 {
-    public class LoginController : Controller
+	[ApiController]
+	[Route("[controller]")]
+	public class LoginController : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<SharedData.Models.User> _userManager;
+        private readonly SignInManager<SharedData.Models.User> _signInManager;
         private readonly ITokenService _tokenService;
+		private readonly IUserInfo _userInfo;
 
-		public LoginController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, ITokenService tokenService)
+		public LoginController(UserManager<SharedData.Models.User> userManager, SignInManager<SharedData.Models.User> signInManager, ITokenService tokenService, IUserInfo userInfo)
         {
 			_userManager = userManager;
 			_signInManager = signInManager;
             _tokenService = tokenService;
+			_userInfo = userInfo;
         }
 
 
-        // GET: Login
-        [HttpGet]
-        public IActionResult Login()
+		// GET: Login
+		[HttpGet("Login")]
+		public IActionResult Login()
         {
             return View();
         }
 
-        [HttpGet]
-        public IActionResult Register()
+		[HttpGet("Register")]
+		public IActionResult Register()
         {
             return View();
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+		[HttpPost("Register")]
+		public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
         {
-            if (ModelState.IsValid)
+
+			if (!ModelState.IsValid) return BadRequest(ModelState);
+
+			var user = new SharedData.Models.User
+			{
+				UserName = model.Email,
+				Email = model.Email
+				
+			};
+
+
+			var result = await _userManager.CreateAsync(user, model.Password);
+
+
+			if (result.Succeeded)
+			{
+				var initialProfile = new SharedData.Models.UserInfo
+				{
+					UserID = user.Id,
+					FirstName = string.Empty,
+					LastName = string.Empty,
+					creditCardNumber = string.Empty,
+					Name = model.Email,
+					LastFourDigits = string.Empty
+				};
+				try
+				{
+
+					_userInfo.AddCreditCard(initialProfile);
+
+					return Ok(new { status = "Success", message = "User registered and profile created successfully!" });
+				}
+				catch (Exception)
+				{
+					// 5. Production Compensating Action: Rollback identity if data seeding fails
+					await _userManager.DeleteAsync(user);
+					return StatusCode(500, "Critical failure initializing application profile context. Account rolled back.");
+				}
+			}
+
+			return BadRequest(result.Errors);
+		}
+
+		[HttpPost("Login")]
+		public async Task<IActionResult> Login([FromBody] LoginViewModel model)
+        {
+
+			if (!ModelState.IsValid) return BadRequest(ModelState);
+
+			
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, false);
+
+            if (result.Succeeded)
             {
-                var user = new IdentityUser { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
-
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("login", "login");
-                }
-
-                foreach(var error in result.Errors)
-                {
-                    ModelState.AddModelError("", error.Description);
-                }
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                var token = _tokenService.CreateToken(user);
+                return Ok(new { token });
             }
+            ModelState.AddModelError(string.Empty, "Invalid Login Attempt");
+            
+			return Unauthorized(new { status = "Error", message = "Invalid Login Attempt" });
+		}
 
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, false);
-
-                if (result.Succeeded)
-                {
-                    var user = await _userManager.FindByEmailAsync(model.Email);
-                    var token = _tokenService.CreateToken(user);
-                    return Ok(new { token });
-                }
-                ModelState.AddModelError(string.Empty, "Invalid Login Attempt");
-            }
-            return View(model);
-        }
-
-		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		public ActionResult ConfirmCode()
         {
             return View();
