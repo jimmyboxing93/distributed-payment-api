@@ -52,35 +52,35 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - [ ] Integrate AutoMapper for DTO management
 
 ```mermaid
-graph TD
-    User((User / Recruiter)) -->|HTTPS Request + Bearer Header| Gate{JWT Auth Gate}
+graph LR
+    User((User / Recruiter)) -->|HTTPS Request<br>+ Bearer Header| Gate{JWT Auth Gate}
     
-    subgraph "Backend Orchestration (.NET 9)"
+    subgraph Backend_Orchestration["Backend Orchestration (.NET 9)"]
         Gate -->|Valid Token Context| MVC[ASP.NET Core 9 Controllers]
-        Gate -->|Missing/Invalid| 401[401 Unauthorized Response]
+        Gate -->|Missing / Invalid| 401[401 Unauthorized]
         
         MVC -->|Injected HttpContext| Services[Domain Services & Interfaces]
         
-        %% The Isolation Logic
-        Services -->|Full CRUD IUserInfo| PaymentAPI[PaymentGateway API]
-        Services -->|Stateless Claims Extraction| AI[AI Agent Layer / Semantic Kernel]
+        %% Splitting these out clearly to avoid cross-over overlap
+        Services -->|Full CRUD<br>IUserInfo| PaymentAPI[PaymentGateway API]
+        Services -->|Stateless Claims<br>Extraction| AI[AI Agent Layer<br>Semantic Kernel]
         
-        AI <-->|Kernel Orchestration| Gemini[Gemini Pro]
+        AI <-->|Kernel<br>Orchestration| Gemini[Gemini Pro]
     end
 
-    subgraph "Infrastructure (Dockerized)"
+    subgraph Infrastructure["Infrastructure (Dockerized)"]
         PaymentAPI -->|EF Core 9| DB[(SQL Server 2022)]
-        AI -.->|Restricted Read-Only Access| DB
+        AI -.->|Restricted Read-Only<br>Access| DB
         Env[.env File] -->|Injected Secrets| PaymentAPI
     end
 
-    subgraph "CI/CD & Quality Control"
+    subgraph Quality_Control["CI/CD & Quality Control"]
         Actions[GitHub Actions] -->|Verify| Build[Build & Compile]
         Build -->|Execute| Tests[xUnit / Moq Suite]
         Tests -->|Status| Pass{{"Build: PASSING ✅"}}
         style Pass fill:#d4edda,stroke:#28a745,stroke-width:2px
     end
 
-    %% Validating the code
+    %% Clear validation cross-links mapped neatly below the main flow
     Pass -.->|Validates Isolation| AI
     Pass -.->|Validates JWT Auth| Gate
