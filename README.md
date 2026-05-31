@@ -15,6 +15,7 @@ This project represents a full-scale modernization of a legacy architecture. I h
 - **Database:** SQL Server with EF Core 9 & Qdrant (Vector Store)
 
 ## 📂 Project Structure
+- `frontend/`: Single Page Application built using **Angular 18** and **NgRx** state management.
 - `src/PaymentGateway.API`: Core processing engine and Merchant logic.
 - `src/Payment.ClientView`: The Consumer/User-facing portal.
 - `src/AIFinancialService`: AI-driven service for financial insights.
@@ -53,30 +54,46 @@ This project represents a full-scale modernization of a legacy architecture. I h
 
 ```mermaid
 graph TD
-    User((User / Recruiter)) -->|HTTPS Request + Bearer Header| Gate{JWT Auth Gate}
-    
+    User((User / Recruiter)) -->|Interacts UI| AngularApp[Angular 18 SPA client]
+
+    %% FRONTEND TIER (NgRx State Management)
+    subgraph Frontend_Tier["Frontend Tier (localhost:4200)"]
+        AngularApp -->|Dispatches Actions| Store[NgRx State Manager]
+        Store -->|Auth Flow Slices| AuthState["auth.reducer.ts (Tokens)"]
+        Store -->|Agent Chat Slices| ChatState["chat.reducer.ts (Messages)"]
+    end
+
+    %% DUAL API CALL PATHWAYS (Requires CORS validation)
+    AuthState -->|HTTP POST + Credentials| IdentityGate{Identity JWT Gate}
+    ChatState -->|HTTP POST + Bearer Token| GatewayGate{Gateway API Key Gate}
+
     %% MAIN FLOW LAYER
     subgraph Backend_Orchestration["Backend Orchestration (.NET 9)"]
-        Gate -->|Valid Token Context| MVC[ASP.NET Core 9 Controllers]
-        Gate -->|Missing/Invalid| 401[401 Unauthorized Response]
+        IdentityGate -->|Valid Token Context| ViewAPI[Payment.IdentityAPI / ViewApi]
+        IdentityGate -->|Missing/Invalid| 401Auth[401 Unauthorized]
+
+        GatewayGate -->|Valid API Key + Claims| MVC[PaymentGateway.API Controllers]
+        GatewayGate -->|Missing/Invalid| 401Gate[401 Unauthorized]
         
         MVC -->|Injected HttpContext| Services[Domain Services & Interfaces]
         
         %% Side-by-side positioning inside the orchestrator
-        Services -->|Full CRUD<br>IUserInfo| PaymentAPI[PaymentGateway API]
+        Services -->|Full CRUD<br>IUserInfo| MVC
         Services -->|Stateless Claims<br>Extraction| AI[AI Agent Layer / Semantic Kernel]
         
         AI <-->|Kernel Orchestration| Gemini[Gemini Pro]
     end
 
-    %% INFRASTRUCTURE LAYER (Positioned neatly right beneath the API)
+    %% INFRASTRUCTURE LAYER
     subgraph Infrastructure["Infrastructure (Dockerized)"]
-        PaymentAPI -->|EF Core 9| DB[(SQL Server 2022)]
+        ViewAPI -->|EF Core 9| DB[(SQL Server 2022)]
+        MVC -->|EF Core 9| DB
         AI -.->|Restricted Read-Only Access| DB
-        Env[.env File] -->|Injected Secrets| PaymentAPI
+        Env[.env File] -->|Injected Secrets| ViewAPI
+        Env -->|Injected Secrets| MVC
     end
 
-    %% QUALITY LAYER (Shifted to stack cleanly below or beside)
+    %% QUALITY LAYER
     subgraph Quality_Control["CI/CD & Quality Control"]
         Actions[GitHub Actions] -->|Verify| Build[Build & Compile]
         Build -->|Execute| Tests[xUnit / Moq Suite]
@@ -84,6 +101,6 @@ graph TD
         style Pass fill:#d4edda,stroke:#28a745,stroke-width:2px
     end
 
-    %% Validation cross-links that cleanly span without skewing the graph width
+    %% Validation cross-links
     Pass -.->|Validates Isolation| AI
-    Pass -.->|Validates JWT Auth| Gate
+    Pass -.->|Validates JWT Auth| IdentityGate
