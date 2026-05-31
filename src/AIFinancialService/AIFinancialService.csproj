@@ -28,7 +28,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Payment.ClientView\Payment.ClientView.csproj" />
+	  <ProjectReference Include="..\Payment.ClientView\Payment.IdentityAPI.csproj" />
 	  <ProjectReference Include="..\SharedData\SharedData.csproj" />
 	</ItemGroup>
 

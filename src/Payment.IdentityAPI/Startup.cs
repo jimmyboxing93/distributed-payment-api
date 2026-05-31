@@ -83,6 +83,17 @@ namespace ViewApi
                     }
                 };
             });
+
+			services.AddCors(options =>
+			{
+				options.AddPolicy("AngularDevPolicy", policy =>
+				{
+					policy.WithOrigins("http://localhost:4200")
+						  .AllowAnyHeader()
+						  .AllowAnyMethod()
+						  .AllowCredentials();
+				});
+			});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -103,7 +114,9 @@ namespace ViewApi
 
             app.UseRouting();
 
-            app.UseAuthentication();
+			app.UseCors("AngularDevPolicy");
+
+			app.UseAuthentication();
 
             app.UseAuthorization();
 

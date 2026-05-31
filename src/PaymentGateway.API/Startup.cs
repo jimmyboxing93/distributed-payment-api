@@ -31,6 +31,17 @@ namespace PaymentGateway.API
 				opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
 			services.AddScoped<IUserInfo, SqlUserData>();
+
+			services.AddCors(options =>
+			{
+				options.AddPolicy("AngularDevPolicy", policy =>
+				{
+					policy.WithOrigins("http://localhost:4200")
+						  .AllowAnyHeader()
+						  .AllowAnyMethod()
+						  .AllowCredentials();
+				});
+			});
 		}
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -38,7 +49,9 @@ namespace PaymentGateway.API
         {
             app.UseDeveloperExceptionPage();
 
-            app.UseMiddleware<ApiKeyMiddleware>();
+			app.UseCors("AngularDevPolicy");
+
+			app.UseMiddleware<ApiKeyMiddleware>();
 
             app.UseMvc(routes =>
             {
@@ -48,6 +61,8 @@ namespace PaymentGateway.API
             });
             // Used to access static files such as js. IF omitted, will return 404 error.
             app.UseStaticFiles();
-        }
+
+			
+		}
     }
 }
